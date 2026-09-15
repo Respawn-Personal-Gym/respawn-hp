@@ -187,8 +187,8 @@ select.input{appearance:auto;-webkit-appearance:menulist;background:#fff}
 
 /* v0.14: keep iOS native date controls inside the booking column */
 @media(max-width:767px){
-  .date-row>div:nth-child(2){min-width:0;max-width:100%;overflow:hidden}
-  .date-row input[type="date"]{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+  .date-row>div:nth-child(2){width:100%;min-width:0;max-width:100%}
+  .date-row input[type="date"]{display:block;width:100%;max-width:100%;min-width:0;inline-size:100%;min-inline-size:0;box-sizing:border-box;-webkit-appearance:none;appearance:none}
 }
 
 /* v0.13: compact mobile booking rows + progressive fixed CTA visibility */
