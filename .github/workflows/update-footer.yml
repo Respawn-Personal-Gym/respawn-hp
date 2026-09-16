@@ -1,69 +1,10 @@
-name: One-time selective HP improvements
+name: Archived selective HP update
 
 on:
-  push:
-    paths:
-      - '.github/workflows/update-footer.yml'
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  update-hp:
+  noop:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Apply selective content improvements
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-
-          def rep(old, new, label):
-              global s
-              if old not in s:
-                  raise SystemExit(f'{label}: target not found')
-              s = s.replace(old, new, 1)
-
-          rep('.method-items{display:grid;grid-template-columns:repeat(3,1fr);margin-top:64px;border-top:1px solid var(--border)}',
-              '.method-items{display:grid;grid-template-columns:repeat(4,1fr);margin-top:64px;border-top:1px solid var(--border)}',
-              'method grid')
-
-          rep('<article class="method-item"><span class="n">03</span><h3>変化に合わせて更新する</h3><p>身体の変化や習熟度に合わせて、<br class="pc-br"><br class="sp-br"><span class="nowrap">種目・重量・頻度・食事</span>などを<br class="sp-br"><span class="nowrap">調整します。</span></p></article></div>',
-              '<article class="method-item"><span class="n">03</span><h3>変化に合わせて更新する</h3><p>身体の変化や習熟度に合わせて、<br class="pc-br"><br class="sp-br"><span class="nowrap">種目・重量・頻度・食事</span>などを<br class="sp-br"><span class="nowrap">調整します。</span></p></article><article class="method-item"><span class="n">04</span><h3>自分でも判断できるようになる</h3><p>通っている間だけではなく、<br class="pc-br">少しずつ身体づくりの考え方を身につけ、<span class="nowrap">自分に必要なこと</span>を判断できる状態を目指します。</p></article></div>',
-              'method item 04')
-
-          rep('<article class="reason"><div class="reason-badge">03</div><h3>トレーナー自身も身体づくりを実践</h3><p>知識だけではなく、自ら試し、積み重ねてきた経験も指導に活かします。</p></article>',
-              '<article class="reason"><div class="reason-badge">03</div><h3>必要な強度では、きちんと取り組む</h3><p>「初心者だから軽く動くだけ」で終わらせず、<br class="pc-br">目的に必要な範囲で少しずつ負荷を高めていきます。</p></article>',
-              'reason 03')
-
-          price_end = '<div class="price-cta"><h3>どのプランが合うか分からなくても<br class="sp-br">大丈夫です。</h3><p>体験時に目的や通える頻度を伺いながらご案内します。</p><a href="#booking" class="cta">初回体験を予約する</a></div></div></section>\n<section class="trial">'
-          fit = '<div class="price-cta"><h3>どのプランが合うか分からなくても<br class="sp-br">大丈夫です。</h3><p>体験時に目的や通える頻度を伺いながらご案内します。</p><a href="#booking" class="cta">初回体験を予約する</a></div></div></section>\n<section class="fit-guide"><div class="container"><h2 class="section-title">こんな方に、<br class="sp-br">Respawnは向いています。</h2><p class="section-description">パーソナルジムだけが正解ではありません。<br class="sp-br">大切なのは、自分の目的に合った環境を選ぶことです。</p><div class="fit-grid"><article class="fit-card"><h3>Respawnが向いている方</h3><ul class="fit-list"><li>自己流で続けてきたけれど、結果に伸び悩んでいる</li><li>これから始めるので、最初に正しく教わりたい</li><li>ある程度しっかりトレーニングして身体を変えたい</li><li>理由まで理解し、自分でも判断できるようになりたい</li></ul></article><article class="fit-card muted"><h3>他の選択肢が向いている場合</h3><ul class="fit-list"><li>駅から1〜2分以内であることを最優先したい</li><li>とにかく料金の安さだけを最優先したい</li><li>マンツーマンではなく複数人での指導を希望している</li><li>すでに自分でトレーニングや食事を十分管理できている</li></ul></article></div></div></section>\n<section class="trial">'
-          rep(price_end, fit, 'fit section')
-
-          faq_anchor = '<details><summary>体験を受けたら入会しなければいけませんか？</summary><div class="answer">いいえ。体験後に内容や通い方をご確認いただいたうえで、<br class="sp-br">ご検討ください。</div></details>'
-          faq_extra = '<details><summary>食事制限は厳しいですか？</summary><div class="answer">極端な食事制限を前提にはしていません。<br class="sp-br">目的や現在の食生活、続けやすさを考えながら必要な調整をご提案します。</div></details><details><summary>週何回通うのがおすすめですか？</summary><div class="answer">目的や自主トレーニングの有無、生活によって変わります。<br class="sp-br">体験時に現在の状況を確認しながらご案内します。</div></details><details><summary>どの料金プランを選べばいいか分かりません。</summary><div class="answer">問題ありません。目的、通える頻度、自主トレーニングの有無などを伺いながら、<br class="sp-br">体験時に各プランの違いをご説明します。</div></details><details><summary>持ち物は何が必要ですか？</summary><div class="answer">運動できる服装、室内用シューズ、飲み物などをご用意ください。<br class="sp-br">詳細は体験予約確定時にもご案内します。</div></details><details><summary>筋肉を大きくしたくないのですが大丈夫ですか？</summary><div class="answer">はい。トレーニング内容は目的によって変わります。<br class="sp-br">「引き締めたい」「体力をつけたい」など、ご希望に合わせて内容を組み立てます。</div></details>'
-          rep(faq_anchor, faq_anchor + faq_extra, 'FAQ expansion')
-
-          rep('<section class="final"><div class="container final-inner"><h2>変わりたいと思った<br class="sp-br">ときが、<br class="pc-br">始めどきです。</h2><p>まずは<span data-trial-duration>90</span>分の体験で、<br class="sp-br">今の身体とこれからの<span class="nowrap">進め方</span>を<br class="sp-br">一緒に整理しましょう。</p>',
-              '<section class="final"><div class="container final-inner"><h2>自己流を卒業する第一歩を、<br><span data-trial-duration>90</span>分から。</h2><p>今の身体とこれからの<span class="nowrap">進め方</span>を、<br class="sp-br">体験で一緒に整理しましょう。</p>',
-              'final CTA')
-
-          css = '''\n/* v0.18: selective competitive-audit improvements without restructuring the page */\n.fit-guide{padding:var(--section) 0;background:#fff}\n.fit-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:32px;margin-top:48px}\n.fit-card{padding:34px 36px;border:1px solid var(--border);border-radius:var(--r);background:#fff}\n.fit-card.muted{background:#f7f7f4}\n.fit-card h3{margin:0;font-size:22px}\n.fit-list{margin:22px 0 0;padding:0;list-style:none}\n.fit-list li{position:relative;padding:13px 0 13px 25px;border-top:1px solid var(--border)}\n.fit-list li:before{content:"";position:absolute;left:2px;top:23px;width:8px;height:8px;border-radius:50%;background:var(--brand)}\n@media(max-width:767px){\n  .fit-grid{grid-template-columns:1fr;gap:20px;margin-top:36px}\n  .fit-card{padding:26px 22px}\n}\n'''
-          if '/* v0.18: selective competitive-audit improvements' in s:
-              raise SystemExit('v0.18 CSS already present')
-          s = s.replace('</style>', css + '\n</style>', 1)
-
-          p.write_text(s, encoding='utf-8')
-          PY
-      - name: Commit and push
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m 'Selective HP copy improvements'
-          git push
+      - run: echo "Selective HP update already applied."
