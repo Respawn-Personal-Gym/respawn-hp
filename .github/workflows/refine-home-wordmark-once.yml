@@ -16,70 +16,19 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-
-          old = '''    .logo-lockup .brand-copy{
-      display:flex;
-      align-items:baseline;
-      gap:7px;
-    }
-    .logo-lockup .brand-kicker{
-      color:var(--text);
-      font-family:"Inter","Noto Sans JP",sans-serif;
-      font-size:17px;
-      font-weight:700;
-      letter-spacing:-.025em;
-    }
-    .logo-lockup .brand-name{
-      color:var(--text)!important;
-      font-family:"GFS Didot",serif;
-      font-size:22px;
-      font-weight:400;
-      letter-spacing:.01em;
-    }
-    @media(max-width:767px){
-      .logo-lockup{gap:7px}
-      .logo-lockup .brand-symbol{width:31px;height:31px;flex-basis:31px}
-      .logo-lockup .brand-kicker{font-size:12px}
-      .logo-lockup .brand-name{font-size:18px}
-    }'''
-          new = '''    .logo-lockup .brand-copy{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:0;
-      line-height:1;
-    }
-    .logo-lockup .brand-kicker{
-      color:var(--text);
-      font-family:"GFS Didot",serif;
-      font-size:11px;
-      font-weight:400;
-      letter-spacing:.19em;
-      line-height:1.05;
-      white-space:nowrap;
-    }
-    .logo-lockup .brand-name{
-      color:var(--text)!important;
-      font-family:"GFS Didot",serif;
-      font-size:28px;
-      font-weight:400;
-      letter-spacing:-.015em;
-      line-height:.95;
-      white-space:nowrap;
-    }
-    @media(max-width:767px){
-      .logo-lockup{gap:7px}
-      .logo-lockup .brand-symbol{width:31px;height:31px;flex-basis:31px}
-      .logo-lockup .brand-kicker{font-size:9px;letter-spacing:.18em}
-      .logo-lockup .brand-name{font-size:23px}
-    }'''
-
-          if s.count(old) != 1:
-              raise SystemExit(f'expected one home wordmark CSS block, found {s.count(old)}')
+          replacements = [
+              ('.logo-lockup .brand-copy{\n      display:flex;\n      align-items:baseline;\n      gap:7px;\n    }', '.logo-lockup .brand-copy{\n      display:flex;\n      flex-direction:column;\n      align-items:center;\n      justify-content:center;\n      gap:0;\n      line-height:1;\n    }'),
+              ('.logo-lockup .brand-kicker{\n      color:var(--text);\n      font-family:"Inter","Noto Sans JP",sans-serif;\n      font-size:17px;\n      font-weight:700;\n      letter-spacing:-.025em;\n    }', '.logo-lockup .brand-kicker{\n      color:var(--text);\n      font-family:"GFS Didot",serif;\n      font-size:11px;\n      font-weight:400;\n      letter-spacing:.19em;\n      line-height:1.05;\n      white-space:nowrap;\n    }'),
+              ('.logo-lockup .brand-name{\n      color:var(--text)!important;\n      font-family:"GFS Didot",serif;\n      font-size:22px;\n      font-weight:400;\n      letter-spacing:.01em;\n    }', '.logo-lockup .brand-name{\n      color:var(--text)!important;\n      font-family:"GFS Didot",serif;\n      font-size:28px;\n      font-weight:400;\n      letter-spacing:-.015em;\n      line-height:.95;\n      white-space:nowrap;\n    }'),
+              ('.logo-lockup .brand-kicker{font-size:12px}', '.logo-lockup .brand-kicker{font-size:9px;letter-spacing:.18em}'),
+              ('.logo-lockup .brand-name{font-size:18px}', '.logo-lockup .brand-name{font-size:23px}'),
+          ]
+          for old, new in replacements:
+              if s.count(old) != 1:
+                  raise SystemExit(f'expected exactly one match, found {s.count(old)} for {old[:60]!r}')
+              s = s.replace(old, new, 1)
           if 'class="brand-symbol"' not in s:
               raise SystemExit('brand symbol is missing from the home header')
-          s = s.replace(old, new, 1)
           p.write_text(s, encoding='utf-8')
           PY
       - name: Verify diff
