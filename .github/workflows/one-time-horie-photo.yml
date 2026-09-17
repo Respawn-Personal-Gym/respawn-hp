@@ -1,0 +1,51 @@
+name: One-time Horie homepage photo update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-time-horie-photo.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace Horie competition image only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          anchor = '<h2 class="section-title">トレーナー自身も身体づくりを実践</h2>'
+          if s.count(anchor) != 1:
+              raise SystemExit(f'anchor count={s.count(anchor)}')
+          if not Path('assets/horie-competition.webp').exists():
+              raise SystemExit('assets/horie-competition.webp is missing')
+
+          head, tail = s.split(anchor, 1)
+          pattern = r'(<article class="comp-card"><div class="comp-photo"><img src=")[^"]+("[^>]*>)'
+          tail2, n = re.subn(pattern, r'\1assets/horie-competition.webp\2', tail, count=1)
+          if n != 1:
+              raise SystemExit(f'target image replacement count={n}')
+          out = head + anchor + tail2
+          if out.count('assets/horie-competition.webp') != 1:
+              raise SystemExit(f'new image path count={out.count("assets/horie-competition.webp")}')
+          p.write_text(out, encoding='utf-8')
+          PY
+      - name: Commit change
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && { echo 'No change'; exit 1; }
+          git commit -m 'Use Horie competition photo on homepage'
+          git push
