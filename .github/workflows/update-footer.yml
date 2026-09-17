@@ -1,52 +1,10 @@
-name: One-time v0.19 mobile UX fix
+name: Archived one-time v0.19 update
 
 on:
-  push:
-    paths:
-      - '.github/workflows/update-footer.yml'
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  update-hp:
+  noop:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Refine fit headline and fixed CTA timing
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-
-          old_fit = '<section class="fit-guide"><div class="container"><h2 class="section-title">こんな方に、<br class="sp-br">Respawnは向いています。</h2><p class="section-description">パーソナルジムだけが正解ではありません。<br class="sp-br">大切なのは、自分の目的に合った環境を選ぶことです。</p>'
-          new_fit = '<section class="fit-guide"><div class="container"><h2 class="section-title fit-title">こんな方に、<br class="sp-br"><span class="fit-title-line">Respawnは向いています。</span></h2><p class="section-description">大切なのは、自分の目的に合った環境を選ぶことです。<br class="sp-br">パーソナルジム以外の選択肢が合う場合もあります。</p>'
-          if old_fit not in s:
-              raise SystemExit('Fit-guide target not found')
-          s = s.replace(old_fit, new_fit, 1)
-
-          css_marker = '/* v0.13: compact mobile booking rows + progressive fixed CTA visibility */\n@media(max-width:767px){\n'
-          css_insert = '/* v0.19: fit-guide headline wrapping + fixed CTA timing */\n@media(max-width:767px){\n  .fit-title{font-size:27px}\n  .fit-title-line{white-space:nowrap}\n}\n\n'
-          if css_marker not in s:
-              raise SystemExit('CSS marker not found')
-          s = s.replace(css_marker, css_insert + css_marker, 1)
-
-          pattern = r'const fixed=document\.querySelector\("\.mobile-fixed"\);.*?updateFixedCta\(\);'
-          replacement = 'const fixed=document.querySelector(".mobile-fixed");\nconst heroCta=document.querySelector(".trial-mini .cta");\nconst siteHeader=document.querySelector(".site-header");\nconst fixedHideTargets=[document.getElementById("booking"),document.querySelector(".final"),document.querySelector(".site-footer")].filter(Boolean);\nconst setFixedCtaHidden=hidden=>{fixed.classList.toggle("is-hidden",hidden);fixed.setAttribute("aria-hidden",hidden?"true":"false")};\nconst updateFixedCta=()=>{\n  const headerBottom=siteHeader?siteHeader.getBoundingClientRect().bottom:0;\n  const heroPassed=!heroCta||heroCta.getBoundingClientRect().bottom<=headerBottom;\n  const blocked=fixedHideTargets.some(t=>{const r=t.getBoundingClientRect();return r.top<window.innerHeight&&r.bottom>0});\n  setFixedCtaHidden(!heroPassed||blocked);\n};\nlet fixedTick=false;\nconst requestFixedCtaUpdate=()=>{if(!fixedTick){fixedTick=true;requestAnimationFrame(()=>{fixedTick=false;updateFixedCta()})}};\nwindow.addEventListener("scroll",requestFixedCtaUpdate,{passive:true});\nwindow.addEventListener("resize",requestFixedCtaUpdate);\nupdateFixedCta();'
-          s2, count = re.subn(pattern, replacement, s, count=1, flags=re.S)
-          if count != 1:
-              raise SystemExit(f'Fixed CTA JS replacement count: {count}')
-          p.write_text(s2, encoding='utf-8')
-          PY
-      - name: Commit and push
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m 'Refine fit headline and fixed CTA timing'
-          git push
+      - run: echo "v0.19 mobile UX update already applied."
