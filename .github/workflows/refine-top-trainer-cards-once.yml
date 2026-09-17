@@ -1,0 +1,49 @@
+name: Refine top trainer cards once
+on:
+  push:
+    paths:
+      - '.github/workflows/refine-top-trainer-cards-once.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refine trainer card copy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          replacements = [
+            (
+              '<p class="trainer-bio">大手パーソナルジムでの指導経験を経て独立。<br class="pc-br"><br class="sp-br">ダイエットから<span class="nowrap">筋力アップ</span>まで、<br class="sp-br">目的に合わせた実践的な指導を行います。</p><ul><li>指導実績100名以上</li><li>NPCJ・FWJ等で優勝実績</li></ul>',
+              '<p class="trainer-bio">大手ダイエット系パーソナルジムでの指導を経て独立。<br class="pc-br"><br class="sp-br">自身も身体づくりで変わった経験をもとに、<br class="sp-br">目的・経験・生活に合わせて指導します。</p><ul><li>指導実績100名以上</li><li>ボディメイクコンテスト3度優勝</li></ul>'
+            ),
+            (
+              '<p class="trainer-bio">ストレッチ・フィットネスの現場で<br class="sp-br">豊富な<span class="nowrap">指導経験</span>を持ち、<br class="pc-br"><br class="sp-br">幅広い目的に対応します。</p><ul><li>月間120セッション超の指導経験</li><li>フィットネスジムで店舗実績1位</li><li>マッスルゲート優勝実績</li></ul>',
+              '<p class="trainer-bio">大手ストレッチ専門店と大手フィットネスジムで<br class="sp-br">豊富な現場経験。<br class="pc-br"><br class="sp-br">筋肥大・バルクアップを得意とし、<br class="sp-br">ストレッチの知識も活かして指導します。</p><ul><li>月間120セッション超の指導経験</li><li>売上・顧客数・顧客継続率で店舗1位</li><li>マッスルゲート奈良 優勝</li></ul>'
+            ),
+          ]
+
+          for old, new in replacements:
+              if s.count(old) != 1:
+                  raise SystemExit(f'expected exactly one match, found {s.count(old)} for: {old[:80]}')
+              s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Verify diff
+        run: |
+          git diff --check
+          git diff --stat
+          git diff -- index.html
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Refine top trainer introductions'
+          git push
