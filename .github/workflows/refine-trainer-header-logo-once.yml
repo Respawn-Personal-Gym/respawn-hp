@@ -1,0 +1,47 @@
+name: Refine trainer header logo typography once
+on:
+  push:
+    paths:
+      - '.github/workflows/refine-trainer-header-logo-once.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use GFS Didot for full trainer header wordmark
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          for rel in ('trainer/horie/index.html', 'trainer/ihara/index.html'):
+              p = Path(rel)
+              s = p.read_text(encoding='utf-8')
+
+              old_css = '.brand-kicker{font-size:17px;font-weight:700;letter-spacing:-.025em}.brand-name{font-family:"GFS Didot",serif;font-size:22px;font-weight:400;letter-spacing:.01em}'
+              new_css = '.brand-kicker{font-family:"GFS Didot",serif;font-size:17px;font-weight:400;letter-spacing:.12em}.brand-name{font-family:"GFS Didot",serif;font-size:22px;font-weight:400;letter-spacing:.01em}'
+              if s.count(old_css) != 1:
+                  raise SystemExit(f'{rel}: expected one CSS match, found {s.count(old_css)}')
+              s = s.replace(old_css, new_css, 1)
+
+              old_html = '<span class="brand-kicker">Personal Gym</span><strong class="brand-name">Respawn</strong>'
+              new_html = '<span class="brand-kicker">Personal Gym</span><span class="brand-name">Respawn</span>'
+              if s.count(old_html) != 1:
+                  raise SystemExit(f'{rel}: expected one header match, found {s.count(old_html)}')
+              s = s.replace(old_html, new_html, 1)
+
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Verify diff
+        run: |
+          git diff --check
+          git diff --stat
+          git diff -- trainer/horie/index.html trainer/ihara/index.html
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add trainer/horie/index.html trainer/ihara/index.html
+          git commit -m 'Match trainer header wordmark typography'
+          git push
