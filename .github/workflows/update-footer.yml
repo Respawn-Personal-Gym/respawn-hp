@@ -23,11 +23,11 @@ jobs:
           from pathlib import Path
           import re
 
+          new = '2022 マッスルゲート奈良 タンクトップ優勝'
+
           index_path = Path('index.html')
           index = index_path.read_text(encoding='utf-8')
-          old = '2022 マッスルゲート奈良 優勝'
-          new = '2022 マッスルゲート奈良 タンクトップ優勝'
-          index = index.replace(old, new)
+          index, top_count = re.subn(r'2022[^<\n]*マッスルゲート奈良[^<\n]*優勝', new, index)
 
           heading_pos = index.find('トレーナー自身も')
           if heading_pos < 0:
@@ -43,7 +43,8 @@ jobs:
           index_path.write_text(index, encoding='utf-8')
 
           ihara_path = Path('trainer/ihara/index.html')
-          ihara = ihara_path.read_text(encoding='utf-8').replace(old, new)
+          ihara = ihara_path.read_text(encoding='utf-8')
+          ihara, detail_count = re.subn(r'2022[^<\n]*マッスルゲート奈良[^<\n]*優勝', new, ihara)
           if 'class="brand-symbol"' not in ihara:
               raise SystemExit('Ihara trainer header symbol missing')
           ihara_path.write_text(ihara, encoding='utf-8')
@@ -52,8 +53,12 @@ jobs:
           if 'class="brand-symbol"' not in horie:
               raise SystemExit('Horie trainer header symbol missing')
 
+          if top_count < 1:
+              raise SystemExit('Ihara top-page achievement phrase not found')
+          if detail_count < 1:
+              raise SystemExit('Ihara detail achievement phrase not found')
           if new not in index or new not in ihara:
-              raise SystemExit('Ihara achievement wording not updated in both pages')
+              raise SystemExit('Ihara achievement wording not present in both pages')
           if 'assets/horie-fwj-award.jpg' not in index:
               raise SystemExit('Horie photo path missing from index')
           PY
@@ -63,9 +68,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html trainer/ihara/index.html assets/horie-fwj-award.jpg
-          if git diff --cached --quiet; then
-            echo 'No changes to commit.'
-          else
-            git commit -m 'Update trainer competition presentation'
-            git push
-          fi
+          git commit -m 'Update trainer competition presentation'
+          git push
