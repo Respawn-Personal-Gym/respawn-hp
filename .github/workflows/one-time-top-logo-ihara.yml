@@ -41,12 +41,19 @@ jobs:
               raise SystemExit(f'homepage header image replacement count={n_img}')
           s = s[:hm.start()] + header2 + s[hm.end():]
 
-          s, n_text = re.subn(r'2022\s*マッスルゲート奈良\s*(?:タンクトップ)?優勝', '2022 マッスルゲート奈良 タンクトップ優勝', s)
-          if n_text < 1:
-              raise SystemExit('Ihara homepage competition text not found')
+          anchor = '<h3>井原 和尚</h3>'
+          pos = s.find(anchor)
+          if pos < 0:
+              raise SystemExit('Ihara homepage card not found')
+          before = s[:pos + len(anchor)]
+          after = s[pos + len(anchor):]
+          after2, n_text = re.subn(r'<li>.*?</li>', '<li>2022 マッスルゲート奈良 タンクトップ優勝</li>', after, count=1, flags=re.S)
+          if n_text != 1:
+              raise SystemExit(f'Ihara list item replacement count={n_text}')
+          s = before + after2
 
           top.write_text(s, encoding='utf-8')
-          print(f'updated header image: {n_img}, Ihara text occurrences: {n_text}')
+          print(f'updated header image: {n_img}, Ihara list item: {n_text}')
           PY
       - name: Commit change
         shell: bash
