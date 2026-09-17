@@ -1,0 +1,96 @@
+name: Refine home wordmark once
+on:
+  push:
+    paths:
+      - '.github/workflows/refine-home-wordmark-once.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Match home header wordmark to brand logo
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old = '''    .logo-lockup .brand-copy{
+      display:flex;
+      align-items:baseline;
+      gap:7px;
+    }
+    .logo-lockup .brand-kicker{
+      color:var(--text);
+      font-family:"Inter","Noto Sans JP",sans-serif;
+      font-size:17px;
+      font-weight:700;
+      letter-spacing:-.025em;
+    }
+    .logo-lockup .brand-name{
+      color:var(--text)!important;
+      font-family:"GFS Didot",serif;
+      font-size:22px;
+      font-weight:400;
+      letter-spacing:.01em;
+    }
+    @media(max-width:767px){
+      .logo-lockup{gap:7px}
+      .logo-lockup .brand-symbol{width:31px;height:31px;flex-basis:31px}
+      .logo-lockup .brand-kicker{font-size:12px}
+      .logo-lockup .brand-name{font-size:18px}
+    }'''
+          new = '''    .logo-lockup .brand-copy{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:0;
+      line-height:1;
+    }
+    .logo-lockup .brand-kicker{
+      color:var(--text);
+      font-family:"GFS Didot",serif;
+      font-size:11px;
+      font-weight:400;
+      letter-spacing:.19em;
+      line-height:1.05;
+      white-space:nowrap;
+    }
+    .logo-lockup .brand-name{
+      color:var(--text)!important;
+      font-family:"GFS Didot",serif;
+      font-size:28px;
+      font-weight:400;
+      letter-spacing:-.015em;
+      line-height:.95;
+      white-space:nowrap;
+    }
+    @media(max-width:767px){
+      .logo-lockup{gap:7px}
+      .logo-lockup .brand-symbol{width:31px;height:31px;flex-basis:31px}
+      .logo-lockup .brand-kicker{font-size:9px;letter-spacing:.18em}
+      .logo-lockup .brand-name{font-size:23px}
+    }'''
+
+          if s.count(old) != 1:
+              raise SystemExit(f'expected one home wordmark CSS block, found {s.count(old)}')
+          if 'class="brand-symbol"' not in s:
+              raise SystemExit('brand symbol is missing from the home header')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Verify diff
+        run: |
+          git diff --check
+          git diff --stat
+          git diff -- index.html
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Match home header wordmark to brand logo'
+          git push
