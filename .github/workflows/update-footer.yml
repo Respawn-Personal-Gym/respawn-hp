@@ -25,24 +25,21 @@ jobs:
 
           index_path = Path('index.html')
           index = index_path.read_text(encoding='utf-8')
-
           old = '2022 マッスルゲート奈良 優勝'
           new = '2022 マッスルゲート奈良 タンクトップ優勝'
           index = index.replace(old, new)
 
-          m = re.search(r'<section class="competition"[\s\S]*?</section>', index)
-          if not m:
-              raise SystemExit('competition section not found')
-          section = m.group(0)
-          section2, n = re.subn(
-              r'(<article class="comp-card"[^>]*>[\s\S]*?<img\b[^>]*?\bsrc=")[^"]+("[^>]*>)',
-              r'\1assets/horie-fwj-award.jpg\2',
-              section,
-              count=1,
-          )
-          if n != 1:
-              raise SystemExit(f'Horie competition image replacement count={n}')
-          index = index[:m.start()] + section2 + index[m.end():]
+          heading_pos = index.find('トレーナー自身も')
+          if heading_pos < 0:
+              raise SystemExit('competition heading not found')
+          tail = index[heading_pos:]
+          img_match = re.search(r'(<img\b[^>]*?\bsrc=")[^"]+("[^>]*>)', tail)
+          if not img_match:
+              raise SystemExit('Horie competition image not found after heading')
+          start = heading_pos + img_match.start()
+          end = heading_pos + img_match.end()
+          replacement = img_match.group(1) + 'assets/horie-fwj-award.jpg' + img_match.group(2)
+          index = index[:start] + replacement + index[end:]
           index_path.write_text(index, encoding='utf-8')
 
           ihara_path = Path('trainer/ihara/index.html')
