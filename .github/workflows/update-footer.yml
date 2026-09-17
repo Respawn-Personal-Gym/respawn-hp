@@ -1,7 +1,8 @@
-name: One-time trainer and competition update
+name: One-time Ihara wording update
 
 on:
   push:
+    branches: [main]
     paths:
       - '.github/workflows/update-footer.yml'
 
@@ -13,60 +14,57 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply requested website changes
+      - name: Apply exact wording and verify trainer header icons
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p assets
-          curl -fsSL 'https://raw.githubusercontent.com/Respawn-Personal-Gym/respawn-hp/site-edits-20260918/assets/horie-fwj-award.jpg.b64' | base64 --decode > assets/horie-fwj-award.jpg
           python - <<'PY'
           from pathlib import Path
           import re
 
-          new = '2022 マッスルゲート奈良 タンクトップ優勝'
+          exact = 'マッスルゲート奈良 タンクトップ優勝'
 
           index_path = Path('index.html')
           index = index_path.read_text(encoding='utf-8')
-          index, top_count = re.subn(r'2022[^<\n]*マッスルゲート奈良[^<\n]*優勝', new, index)
-
-          heading_pos = index.find('トレーナー自身も')
-          if heading_pos < 0:
-              raise SystemExit('competition heading not found')
-          tail = index[heading_pos:]
-          img_match = re.search(r'(<img\b[^>]*?\bsrc=")[^"]+("[^>]*>)', tail)
-          if not img_match:
-              raise SystemExit('Horie competition image not found after heading')
-          start = heading_pos + img_match.start()
-          end = heading_pos + img_match.end()
-          replacement = img_match.group(1) + 'assets/horie-fwj-award.jpg' + img_match.group(2)
-          index = index[:start] + replacement + index[end:]
+          index, n_top = re.subn(
+              r'<li>2022年\s*マッスルゲート奈良\s*優勝</li>',
+              f'<li>{exact}</li>',
+              index,
+              count=1,
+          )
+          if n_top != 1:
+              raise SystemExit(f'homepage Ihara award replacement count={n_top}')
           index_path.write_text(index, encoding='utf-8')
 
           ihara_path = Path('trainer/ihara/index.html')
           ihara = ihara_path.read_text(encoding='utf-8')
-          ihara, detail_count = re.subn(r'2022[^<\n]*マッスルゲート奈良[^<\n]*優勝', new, ihara)
-          if 'class="brand-symbol"' not in ihara:
-              raise SystemExit('Ihara trainer header symbol missing')
+          ihara, n_stat = re.subn(
+              r'<div class="stat"><strong>[^<]*優勝</strong><span>[^<]*マッスルゲート奈良[^<]*</span></div>',
+              '<div class="stat"><strong>マッスルゲート奈良</strong><span>タンクトップ優勝</span></div>',
+              ihara,
+              count=1,
+          )
+          ihara, n_record = re.subn(
+              r'<p class="record">[^<]*マッスルゲート奈良[^<]*優勝</p>',
+              f'<p class="record">{exact}</p>',
+              ihara,
+              count=1,
+          )
+          if n_stat != 1 or n_record != 1:
+              raise SystemExit(f'Ihara detail replacement stat={n_stat}, record={n_record}')
+          if ihara.count('class="brand-symbol"') != 1:
+              raise SystemExit('Ihara trainer header symbol missing or duplicated')
           ihara_path.write_text(ihara, encoding='utf-8')
 
           horie = Path('trainer/horie/index.html').read_text(encoding='utf-8')
-          if 'class="brand-symbol"' not in horie:
-              raise SystemExit('Horie trainer header symbol missing')
-
-          if top_count < 1:
-              raise SystemExit('Ihara top-page achievement phrase not found')
-          if detail_count < 1:
-              raise SystemExit('Ihara detail achievement phrase not found')
-          if new not in index or new not in ihara:
-              raise SystemExit('Ihara achievement wording not present in both pages')
-          if 'assets/horie-fwj-award.jpg' not in index:
-              raise SystemExit('Horie photo path missing from index')
+          if horie.count('class="brand-symbol"') != 1:
+              raise SystemExit('Horie trainer header symbol missing or duplicated')
           PY
       - name: Commit changes
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html trainer/ihara/index.html assets/horie-fwj-award.jpg
-          git commit -m 'Update trainer competition presentation'
+          git add index.html trainer/ihara/index.html
+          git commit -m 'Unify Ihara competition wording'
           git push
