@@ -1,0 +1,47 @@
+name: Publish selected Google reviews once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/publish-reviews-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-reviews:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update review cards only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_css = '/* v0.18: selective competitive-audit improvements without restructuring the page */\n'
+          new_css = '/* v0.20: Google review cards */\n.review-stars{margin:0 0 12px!important;color:var(--brand);font-size:16px;font-weight:800;letter-spacing:.08em}\n\n/* v0.18: selective competitive-audit improvements without restructuring the page */\n'
+          if old_css not in s:
+              raise SystemExit('CSS marker not found')
+          s = s.replace(old_css, new_css, 1)
+
+          old = '<div class="results-group"><h2 class="section-title">実際に通われた方の声</h2><div class="cards3"><article class="card review"><div class="quote">“</div><p>掲載するGoogle口コミを選定後に反映します。</p><p class="source">Google口コミ</p></article><article class="card review"><div class="quote">“</div><p>目的や年代が重ならないよう、異なるタイプの口コミを選定します。</p><p class="source">Google口コミ</p></article><article class="card review"><div class="quote">“</div><p>「指導」「結果」「通いやすさ」など、内容にも幅を持たせます。</p><p class="source">Google口コミ</p></article></div><a href="#" class="text-link placeholder-link">Googleの口コミをもっと見る →</a></div>'
+          new = '<div class="results-group"><h2 class="section-title">実際に通われた方の声</h2><div class="cards3"><article class="card review"><div class="quote">“</div><p class="review-stars" aria-label="5つ星">★★★★★</p><p>自分の身体のことを理解しながらトレーニングできて、モチベーションも上がるし、効果も出やすくて、トレーニングがとても楽しくなりました！！</p><p class="source">_ai さん / Google口コミ</p></article><article class="card review"><div class="quote">“</div><p class="review-stars" aria-label="5つ星">★★★★★</p><p>今までトレーニングの知識がなく、ブレながら色んなことをしていましたが、通い始めてしっかり芯を持ってトレーニングを行うことが出来るようになりました！</p><p class="source">嶋津知足 さん / Google口コミ</p></article><article class="card review"><div class="quote">“</div><p class="review-stars" aria-label="5つ星">★★★★★</p><p>実績あるトレーナーがとても丁寧に指導してくれます。個々に合わせた寄り添いをすごく感じます！初心者から上級者まで幅広く利用できると思います。</p><p class="source">ABC DEF さん / Google口コミ</p></article></div><a href="https://www.google.com/maps/search/?api=1&amp;query=パーソナルジム+リスポーン+高槻店" class="text-link" target="_blank" rel="noopener">Googleの口コミをもっと見る →</a></div>'
+          if old not in s:
+              raise SystemExit('Review block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Verify only intended changes
+        run: |
+          git diff --check
+          git diff --stat
+          git diff -- index.html
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Publish selected Google reviews'
+          git push
