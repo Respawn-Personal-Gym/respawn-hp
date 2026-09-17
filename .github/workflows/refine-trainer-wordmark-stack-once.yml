@@ -1,0 +1,43 @@
+name: Refine trainer wordmark stack once
+on:
+  push:
+    paths:
+      - '.github/workflows/refine-trainer-wordmark-stack-once.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Match stacked wordmark styling
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for rel in ('trainer/horie/index.html', 'trainer/ihara/index.html'):
+              p = Path(rel)
+              s = p.read_text(encoding='utf-8')
+              old = '.brand{display:flex;align-items:baseline;gap:7px;text-decoration:none}.brand-kicker{font-family:"GFS Didot",serif;font-size:17px;font-weight:400;letter-spacing:.12em}.brand-name{font-family:"GFS Didot",serif;font-size:22px;font-weight:400;letter-spacing:.01em}.back{font-size:13px;font-weight:700;text-decoration:none}'
+              new = '.brand{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-decoration:none;line-height:1}.brand-kicker{font-family:"GFS Didot",serif;font-size:11px;font-weight:400;letter-spacing:.19em;line-height:1.05;white-space:nowrap}.brand-name{font-family:"GFS Didot",serif;font-size:28px;font-weight:400;letter-spacing:-.015em;line-height:.95;white-space:nowrap}.back{font-size:13px;font-weight:700;text-decoration:none}'
+              if s.count(old) != 1:
+                  raise SystemExit(f'{rel}: CSS match count {s.count(old)}')
+              s = s.replace(old, new, 1)
+              old_mobile = '.header-inner{height:64px}.brand-kicker{font-size:12px}.brand-name{font-size:18px}.hero{padding:58px 0 54px}'
+              new_mobile = '.header-inner{height:64px}.brand-kicker{font-size:9px;letter-spacing:.18em}.brand-name{font-size:23px}.hero{padding:58px 0 54px}'
+              if s.count(old_mobile) != 1:
+                  raise SystemExit(f'{rel}: mobile CSS match count {s.count(old_mobile)}')
+              s = s.replace(old_mobile, new_mobile, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Verify diff
+        run: |
+          git diff --check
+          git diff --stat
+          git diff -- trainer/horie/index.html trainer/ihara/index.html
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add trainer/horie/index.html trainer/ihara/index.html
+          git commit -m 'Stack trainer header wordmark like brand logo'
+          git push
