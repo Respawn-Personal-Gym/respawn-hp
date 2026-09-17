@@ -1,0 +1,54 @@
+name: Add trainer header icon once
+on:
+  push:
+    paths:
+      - '.github/workflows/add-trainer-header-icon-once.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Respawn icon to trainer headers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          icon = 'data:image/png;base64,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'
+
+          for rel in ('trainer/horie/index.html', 'trainer/ihara/index.html'):
+              p = Path(rel)
+              s = p.read_text(encoding='utf-8')
+
+              old_css = '.brand{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-decoration:none;line-height:1}.brand-kicker{font-family:"GFS Didot",serif;font-size:11px;font-weight:400;letter-spacing:.19em;line-height:1.05;white-space:nowrap}.brand-name{font-family:"GFS Didot",serif;font-size:28px;font-weight:400;letter-spacing:-.015em;line-height:.95;white-space:nowrap}.back{font-size:13px;font-weight:700;text-decoration:none}'
+              new_css = '.brand{display:inline-flex;align-items:center;gap:7px;text-decoration:none;line-height:1}.brand-symbol{width:38px;height:38px;flex:0 0 38px;object-fit:contain}.brand-copy{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1}.brand-kicker{font-family:"GFS Didot",serif;font-size:11px;font-weight:400;letter-spacing:.19em;line-height:1.05;white-space:nowrap}.brand-name{font-family:"GFS Didot",serif;font-size:28px;font-weight:400;letter-spacing:-.015em;line-height:.95;white-space:nowrap}.back{font-size:13px;font-weight:700;text-decoration:none}'
+              if s.count(old_css) != 1:
+                  raise SystemExit(f'{rel}: header CSS match count {s.count(old_css)}')
+              s = s.replace(old_css, new_css, 1)
+
+              old_mobile = '.header-inner{height:64px}.brand-kicker{font-size:9px;letter-spacing:.18em}.brand-name{font-size:23px}.hero{padding:58px 0 54px}'
+              new_mobile = '.header-inner{height:64px}.brand-symbol{width:31px;height:31px;flex-basis:31px}.brand-kicker{font-size:9px;letter-spacing:.18em}.brand-name{font-size:23px}.hero{padding:58px 0 54px}'
+              if s.count(old_mobile) != 1:
+                  raise SystemExit(f'{rel}: mobile CSS match count {s.count(old_mobile)}')
+              s = s.replace(old_mobile, new_mobile, 1)
+
+              old_html = '<a class="brand" href="../../"><span class="brand-kicker">Personal Gym</span><span class="brand-name">Respawn</span></a>'
+              new_html = f'<a class="brand" href="../../"><img class="brand-symbol" src="{icon}" alt=""><span class="brand-copy"><span class="brand-kicker">Personal Gym</span><span class="brand-name">Respawn</span></span></a>'
+              if s.count(old_html) != 1:
+                  raise SystemExit(f'{rel}: header HTML match count {s.count(old_html)}')
+              s = s.replace(old_html, new_html, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Verify diff
+        run: |
+          git diff --check
+          git diff --stat
+          git diff -- trainer/horie/index.html trainer/ihara/index.html
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add trainer/horie/index.html trainer/ihara/index.html
+          git commit -m 'Add Respawn icon to trainer headers'
+          git push
