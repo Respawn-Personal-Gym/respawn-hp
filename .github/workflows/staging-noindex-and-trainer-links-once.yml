@@ -1,0 +1,46 @@
+name: Apply staging noindex and trainer links once
+on:
+  push:
+    paths:
+      - '.github/workflows/staging-noindex-and-trainer-links-once.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply surgical HTML changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          viewport = '<meta name="viewport" content="width=device-width,initial-scale=1">'
+          robots = '<meta name="robots" content="noindex,nofollow">'
+          if robots not in s:
+              if viewport not in s:
+                  raise SystemExit('viewport meta not found')
+              s = s.replace(viewport, viewport + '\n' + robots, 1)
+
+          old = '<a href="#" class="text-link placeholder-link">詳しいプロフィールを見る →</a>'
+          if s.count(old) != 2:
+              raise SystemExit(f'expected exactly 2 trainer placeholder links, found {s.count(old)}')
+          s = s.replace(old, '<a href="trainer/horie/" class="text-link">詳しいプロフィールを見る →</a>', 1)
+          s = s.replace(old, '<a href="trainer/ihara/" class="text-link">詳しいプロフィールを見る →</a>', 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Verify diff
+        run: |
+          git diff --check
+          git diff --stat
+          git diff -- index.html
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Mark staging noindex and link trainer profiles'
+          git push
