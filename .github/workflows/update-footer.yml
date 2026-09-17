@@ -20,29 +20,31 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
+          import re
 
           exact = 'マッスルゲート奈良 タンクトップ優勝'
 
           index_path = Path('index.html')
           index = index_path.read_text(encoding='utf-8')
-          old_top = '<li>2022年 マッスルゲート奈良 優勝</li>'
-          new_top = f'<li>{exact}</li>'
-          if index.count(old_top) != 1:
-              raise SystemExit(f'homepage exact old wording count={index.count(old_top)}')
-          index = index.replace(old_top, new_top, 1)
+          pattern_top = r'<li>(?=[^<]*マッスルゲート奈良)(?=[^<]*優勝)[^<]*</li>'
+          matches_top = re.findall(pattern_top, index)
+          if len(matches_top) != 1:
+              raise SystemExit(f'homepage Ihara award candidate count={len(matches_top)}: {matches_top}')
+          index = re.sub(pattern_top, f'<li>{exact}</li>', index, count=1)
           index_path.write_text(index, encoding='utf-8')
 
           ihara_path = Path('trainer/ihara/index.html')
           ihara = ihara_path.read_text(encoding='utf-8')
-          old_stat = '<div class="stat"><strong>優勝</strong><span>2022 マッスルゲート奈良</span></div>'
-          new_stat = '<div class="stat"><strong>マッスルゲート奈良</strong><span>タンクトップ優勝</span></div>'
-          old_record = '<p class="record">2022年 マッスルゲート奈良 初出場優勝</p>'
-          new_record = f'<p class="record">{exact}</p>'
-          if ihara.count(old_stat) != 1:
-              raise SystemExit(f'Ihara stat old wording count={ihara.count(old_stat)}')
-          if ihara.count(old_record) != 1:
-              raise SystemExit(f'Ihara record old wording count={ihara.count(old_record)}')
-          ihara = ihara.replace(old_stat, new_stat, 1).replace(old_record, new_record, 1)
+          pattern_stat = r'<div class="stat"><strong>[^<]*</strong><span>[^<]*マッスルゲート奈良[^<]*</span></div>'
+          pattern_record = r'<p class="record">[^<]*マッスルゲート奈良[^<]*</p>'
+          stat_matches = re.findall(pattern_stat, ihara)
+          record_matches = re.findall(pattern_record, ihara)
+          if len(stat_matches) != 1:
+              raise SystemExit(f'Ihara stat candidate count={len(stat_matches)}: {stat_matches}')
+          if len(record_matches) != 1:
+              raise SystemExit(f'Ihara record candidate count={len(record_matches)}: {record_matches}')
+          ihara = re.sub(pattern_stat, '<div class="stat"><strong>マッスルゲート奈良</strong><span>タンクトップ優勝</span></div>', ihara, count=1)
+          ihara = re.sub(pattern_record, f'<p class="record">{exact}</p>', ihara, count=1)
           if ihara.count('class="brand-symbol"') != 1:
               raise SystemExit('Ihara trainer header symbol missing or duplicated')
           ihara_path.write_text(ihara, encoding='utf-8')
