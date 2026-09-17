@@ -17,6 +17,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
 
@@ -32,42 +33,12 @@ jobs:
               raise SystemExit('CSS marker not found')
           s = s.replace(css_marker, css_insert + css_marker, 1)
 
-          old_js = '''const fixed=document.querySelector(".mobile-fixed");
-const fixedHideTargets=[document.getElementById("booking"),document.querySelector(".final"),document.querySelector(".site-footer")].filter(Boolean);
-const setFixedCtaHidden=hidden=>{fixed.classList.toggle("is-hidden",hidden);fixed.setAttribute("aria-hidden",hidden?"true":"false")};
-const updateFixedCta=()=>{const hidden=fixedHideTargets.some(t=>{const r=t.getBoundingClientRect();return r.top<window.innerHeight&&r.bottom>0});setFixedCtaHidden(hidden)};
-if("IntersectionObserver" in window){
-  const visibleTargets=new Set();
-  const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>entry.isIntersecting?visibleTargets.add(entry.target):visibleTargets.delete(entry.target));setFixedCtaHidden(visibleTargets.size>0)},{threshold:0});
-  fixedHideTargets.forEach(t=>observer.observe(t));
-}else{
-  let fixedTick=false;
-  const requestFixedCtaUpdate=()=>{if(!fixedTick){fixedTick=true;requestAnimationFrame(()=>{fixedTick=false;updateFixedCta()})}};
-  window.addEventListener("scroll",requestFixedCtaUpdate,{passive:true});
-  window.addEventListener("resize",requestFixedCtaUpdate);
-}
-updateFixedCta();'''
-          new_js = '''const fixed=document.querySelector(".mobile-fixed");
-const heroCta=document.querySelector(".trial-mini .cta");
-const siteHeader=document.querySelector(".site-header");
-const fixedHideTargets=[document.getElementById("booking"),document.querySelector(".final"),document.querySelector(".site-footer")].filter(Boolean);
-const setFixedCtaHidden=hidden=>{fixed.classList.toggle("is-hidden",hidden);fixed.setAttribute("aria-hidden",hidden?"true":"false")};
-const updateFixedCta=()=>{
-  const headerBottom=siteHeader?siteHeader.getBoundingClientRect().bottom:0;
-  const heroPassed=!heroCta||heroCta.getBoundingClientRect().bottom<=headerBottom;
-  const blocked=fixedHideTargets.some(t=>{const r=t.getBoundingClientRect();return r.top<window.innerHeight&&r.bottom>0});
-  setFixedCtaHidden(!heroPassed||blocked);
-};
-let fixedTick=false;
-const requestFixedCtaUpdate=()=>{if(!fixedTick){fixedTick=true;requestAnimationFrame(()=>{fixedTick=false;updateFixedCta()})}};
-window.addEventListener("scroll",requestFixedCtaUpdate,{passive:true});
-window.addEventListener("resize",requestFixedCtaUpdate);
-updateFixedCta();'''
-          if old_js not in s:
-              raise SystemExit('Fixed CTA JS target not found')
-          s = s.replace(old_js, new_js, 1)
-
-          p.write_text(s, encoding='utf-8')
+          pattern = r'const fixed=document\.querySelector\("\.mobile-fixed"\);.*?updateFixedCta\(\);'
+          replacement = 'const fixed=document.querySelector(".mobile-fixed");\nconst heroCta=document.querySelector(".trial-mini .cta");\nconst siteHeader=document.querySelector(".site-header");\nconst fixedHideTargets=[document.getElementById("booking"),document.querySelector(".final"),document.querySelector(".site-footer")].filter(Boolean);\nconst setFixedCtaHidden=hidden=>{fixed.classList.toggle("is-hidden",hidden);fixed.setAttribute("aria-hidden",hidden?"true":"false")};\nconst updateFixedCta=()=>{\n  const headerBottom=siteHeader?siteHeader.getBoundingClientRect().bottom:0;\n  const heroPassed=!heroCta||heroCta.getBoundingClientRect().bottom<=headerBottom;\n  const blocked=fixedHideTargets.some(t=>{const r=t.getBoundingClientRect();return r.top<window.innerHeight&&r.bottom>0});\n  setFixedCtaHidden(!heroPassed||blocked);\n};\nlet fixedTick=false;\nconst requestFixedCtaUpdate=()=>{if(!fixedTick){fixedTick=true;requestAnimationFrame(()=>{fixedTick=false;updateFixedCta()})}};\nwindow.addEventListener("scroll",requestFixedCtaUpdate,{passive:true});\nwindow.addEventListener("resize",requestFixedCtaUpdate);\nupdateFixedCta();'
+          s2, count = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit(f'Fixed CTA JS replacement count: {count}')
+          p.write_text(s2, encoding='utf-8')
           PY
       - name: Commit and push
         run: |
