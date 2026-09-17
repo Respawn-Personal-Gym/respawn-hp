@@ -1,10 +1,81 @@
-name: Archived selective HP update
+name: One-time v0.19 mobile UX fix
 
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/update-footer.yml'
+
+permissions:
+  contents: write
 
 jobs:
-  noop:
+  update-hp:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Selective HP update already applied."
+      - uses: actions/checkout@v4
+      - name: Refine fit headline and fixed CTA timing
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_fit = '<section class="fit-guide"><div class="container"><h2 class="section-title">こんな方に、<br class="sp-br">Respawnは向いています。</h2><p class="section-description">パーソナルジムだけが正解ではありません。<br class="sp-br">大切なのは、自分の目的に合った環境を選ぶことです。</p>'
+          new_fit = '<section class="fit-guide"><div class="container"><h2 class="section-title fit-title">こんな方に、<br class="sp-br"><span class="fit-title-line">Respawnは向いています。</span></h2><p class="section-description">大切なのは、自分の目的に合った環境を選ぶことです。<br class="sp-br">パーソナルジム以外の選択肢が合う場合もあります。</p>'
+          if old_fit not in s:
+              raise SystemExit('Fit-guide target not found')
+          s = s.replace(old_fit, new_fit, 1)
+
+          css_marker = '/* v0.13: compact mobile booking rows + progressive fixed CTA visibility */\n@media(max-width:767px){\n'
+          css_insert = '/* v0.19: fit-guide headline wrapping + fixed CTA timing */\n@media(max-width:767px){\n  .fit-title{font-size:27px}\n  .fit-title-line{white-space:nowrap}\n}\n\n'
+          if css_marker not in s:
+              raise SystemExit('CSS marker not found')
+          s = s.replace(css_marker, css_insert + css_marker, 1)
+
+          old_js = '''const fixed=document.querySelector(".mobile-fixed");
+const fixedHideTargets=[document.getElementById("booking"),document.querySelector(".final"),document.querySelector(".site-footer")].filter(Boolean);
+const setFixedCtaHidden=hidden=>{fixed.classList.toggle("is-hidden",hidden);fixed.setAttribute("aria-hidden",hidden?"true":"false")};
+const updateFixedCta=()=>{const hidden=fixedHideTargets.some(t=>{const r=t.getBoundingClientRect();return r.top<window.innerHeight&&r.bottom>0});setFixedCtaHidden(hidden)};
+if("IntersectionObserver" in window){
+  const visibleTargets=new Set();
+  const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>entry.isIntersecting?visibleTargets.add(entry.target):visibleTargets.delete(entry.target));setFixedCtaHidden(visibleTargets.size>0)},{threshold:0});
+  fixedHideTargets.forEach(t=>observer.observe(t));
+}else{
+  let fixedTick=false;
+  const requestFixedCtaUpdate=()=>{if(!fixedTick){fixedTick=true;requestAnimationFrame(()=>{fixedTick=false;updateFixedCta()})}};
+  window.addEventListener("scroll",requestFixedCtaUpdate,{passive:true});
+  window.addEventListener("resize",requestFixedCtaUpdate);
+}
+updateFixedCta();'''
+          new_js = '''const fixed=document.querySelector(".mobile-fixed");
+const heroCta=document.querySelector(".trial-mini .cta");
+const siteHeader=document.querySelector(".site-header");
+const fixedHideTargets=[document.getElementById("booking"),document.querySelector(".final"),document.querySelector(".site-footer")].filter(Boolean);
+const setFixedCtaHidden=hidden=>{fixed.classList.toggle("is-hidden",hidden);fixed.setAttribute("aria-hidden",hidden?"true":"false")};
+const updateFixedCta=()=>{
+  const headerBottom=siteHeader?siteHeader.getBoundingClientRect().bottom:0;
+  const heroPassed=!heroCta||heroCta.getBoundingClientRect().bottom<=headerBottom;
+  const blocked=fixedHideTargets.some(t=>{const r=t.getBoundingClientRect();return r.top<window.innerHeight&&r.bottom>0});
+  setFixedCtaHidden(!heroPassed||blocked);
+};
+let fixedTick=false;
+const requestFixedCtaUpdate=()=>{if(!fixedTick){fixedTick=true;requestAnimationFrame(()=>{fixedTick=false;updateFixedCta()})}};
+window.addEventListener("scroll",requestFixedCtaUpdate,{passive:true});
+window.addEventListener("resize",requestFixedCtaUpdate);
+updateFixedCta();'''
+          if old_js not in s:
+              raise SystemExit('Fixed CTA JS target not found')
+          s = s.replace(old_js, new_js, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'Refine fit headline and fixed CTA timing'
+          git push
