@@ -36,7 +36,7 @@ jobs:
           ihara_path = Path('trainer/ihara/index.html')
           ihara = ihara_path.read_text(encoding='utf-8')
           pattern_stat = r'<div class="stat"><strong>[^<]*</strong><span>[^<]*マッスルゲート奈良[^<]*</span></div>'
-          pattern_record = r'<p class="record">[^<]*マッスルゲート奈良[^<]*</p>'
+          pattern_record = r'(<li><span class="year">2022</span><strong>)[^<]*マッスルゲート奈良[^<]*(</strong></li>)'
           stat_matches = re.findall(pattern_stat, ihara)
           record_matches = re.findall(pattern_record, ihara)
           if len(stat_matches) != 1:
@@ -44,7 +44,7 @@ jobs:
           if len(record_matches) != 1:
               raise SystemExit(f'Ihara record candidate count={len(record_matches)}: {record_matches}')
           ihara = re.sub(pattern_stat, '<div class="stat"><strong>マッスルゲート奈良</strong><span>タンクトップ優勝</span></div>', ihara, count=1)
-          ihara = re.sub(pattern_record, f'<p class="record">{exact}</p>', ihara, count=1)
+          ihara = re.sub(pattern_record, rf'\1{exact}\2', ihara, count=1)
           if ihara.count('class="brand-symbol"') != 1:
               raise SystemExit('Ihara trainer header symbol missing or duplicated')
           ihara_path.write_text(ihara, encoding='utf-8')
